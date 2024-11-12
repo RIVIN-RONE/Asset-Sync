@@ -1,0 +1,144 @@
+{% extends 'management/base.html' %}
+
+{% block title %}Assigned Assets{% endblock %}
+
+{% block content %}
+<style>
+    .assigned-assets-container form {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #fffbfb;
+        padding: 10px;
+        margin-bottom: 20px;
+    }
+
+    .assigned-assets-container table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+    }
+
+    .assigned-assets-container th, .assigned-assets-container td {
+        padding: 6px 8px;
+        text-align: left;
+        font-size: 0.8rem;
+        border: 1px solid #ccc;
+    }
+
+    .assigned-assets-container thead {
+        background-color: #003366;
+        color: white;
+    }
+
+    .assigned-assets-container tbody tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    .assigned-assets-container td {
+        color: #003366;
+    }
+</style>
+
+<div class="assigned-assets-container">
+    <h1>Assigned Assets</h1>
+
+    <!-- Filters Section -->
+    <form method="GET" action="">
+        <label for="department">Filter by Department:</label>
+        <select name="department" id="department">
+            <option value="">All Departments</option>
+            {% for dept in departments %}
+            <option value="{{ dept }}" {% if department_selected == dept %}selected{% endif %}>{{ dept }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="asset_type">Filter by Asset Type:</label>
+        <select name="asset_type" id="asset_type">
+            <option value="">All Asset Types</option>
+            {% for asset_type in asset_types %}
+            <option value="{{ asset_type }}" {% if asset_type_selected == asset_type %}selected{% endif %}>{{ asset_type }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="search">Search:</label>
+        <input type="text" name="search" id="search" value="{{ search_query }}" placeholder="Search by Employee or Asset">
+
+        <button type="submit">Apply Filters</button>
+        <button type="submit" name="export" value="true">Export to CSV</button>
+    </form>
+
+    <!-- Assets Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Asset Type</th>
+                <th>Serial Number</th>
+                <th>Brand</th>
+                <th>Processor</th>
+                <th>RAM</th>
+                <th>Storage</th>
+                <th>Purchase Date</th>
+                <th>Warranty Expiry</th>
+                <th>Status</th>
+                <th>Employee Name</th>
+                <th>Email</th>
+                <th>Designation</th>
+                <th>Department</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for asset in assets %}
+            <tr>
+                <td>{{ asset.asset_type }}</td>
+                <td>{{ asset.serial_number }}</td>
+                <td>{{ asset.brand }}</td>
+                <td>{{ asset.processor }}</td>
+                <td>{{ asset.ram_capacity }}</td>
+                <td>{{ asset.storage }}</td>
+                <td>{{ asset.date_of_purchase|date:"Y-m-d" }}</td> <!-- Purchase Date -->
+                <td>{{ asset.warranty_date|date:"Y-m-d" }}</td> <!-- Warranty Expiry -->
+                <td>{{ asset.status }}</td>
+                <td>{{ asset.employee.name }}</td>
+                <td>{{ asset.employee.personal_email_id }}</td>
+                <td>{{ asset.employee.designation }}</td>
+                <td>{{ asset.employee.department }}</td>
+                <td>
+                    <form method="POST" action="{% url 'unassign_asset' asset.id asset.asset_type %}">
+                        {% csrf_token %}
+                        <button type="submit" onclick="return confirm('Are you sure you want to unassign this asset?')">Unassign</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="13">No assigned assets found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        <span class="step-links">
+            {% if assets.has_previous %}
+                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if department_selected %}department={{ department_selected }}&{% endif %}{% if asset_type_selected %}asset_type={{ asset_type_selected }}&{% endif %}page=1">&laquo; first</a>
+                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if department_selected %}department={{ department_selected }}&{% endif %}{% if asset_type_selected %}asset_type={{ asset_type_selected }}&{% endif %}page={{ assets.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ assets.number }} of {{ assets.paginator.num_pages }}.
+            </span>
+
+            {% if assets.has_next %}
+                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if department_selected %}department={{ department_selected }}&{% endif %}{% if asset_type_selected %}asset_type={{ asset_type_selected }}&{% endif %}page={{ assets.next_page_number }}">next</a>
+                <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if department_selected %}department={{ department_selected }}&{% endif %}{% if asset_type_selected %}asset_type={{ asset_type_selected }}&{% endif %}page={{ assets.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+{% endblock %}
